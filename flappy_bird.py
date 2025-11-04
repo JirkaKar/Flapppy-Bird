@@ -4,6 +4,8 @@ Stavy: MENU → PLAYING → GAME_OVER
 """
 
 from __future__ import annotations
+import os
+import sys
 import random
 from dataclasses import dataclass
 
@@ -49,7 +51,33 @@ PIPE_DISTANCE = 280
 PIPE_SPEED = 3.2
 
 # ---------------------------------------------------------------------------
-# 4) TŘÍDY
+# 4) ASSETY – načtení sprite snímků ptáka
+# ---------------------------------------------------------------------------
+
+def _assets_dir() -> str:
+    """
+    Vrátí cestu k assets/ tak, aby fungovala jak při běhu ze zdrojáku,
+    tak i v případě PyInstaller (--onefile) – používá _MEIPASS fallback.
+    """
+    base = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base, "assets")
+
+def load_image(name: str, scale_to: tuple[int, int] | None = (BIRD_WIDTH, BIRD_HEIGHT)) -> pygame.Surface:
+    path = os.path.join(_assets_dir(), name)
+    img = pygame.image.load(path).convert_alpha()
+    if scale_to:
+        img = pygame.transform.smoothscale(img, scale_to)
+    return img
+
+# Očekává se, že v assets/ jsou: bird1.png, bird2.png, bird3.png
+BIRD_FRAMES: list[pygame.Surface] = [
+    load_image("bird1.png"),
+    load_image("bird2.png"),
+    load_image("bird3.png"),
+]
+
+# ---------------------------------------------------------------------------
+# 5) TŘÍDY
 # ---------------------------------------------------------------------------
 
 @dataclass
@@ -57,6 +85,8 @@ class Bird:
     x: float
     y: float
     velocity: float = 0.0
+    frame_index: float = 0.0   # plynulá animace
+    frame_speed: float = 0.2   # rychlost přepínání snímků
 
     def flap(self) -> None:
         self.velocity = FLAP_STRENGTH
@@ -64,12 +94,22 @@ class Bird:
     def update(self) -> None:
         self.velocity += GRAVITY
         self.y += self.velocity
+        self.frame_index = (self.frame_index + self.frame_speed) % len(BIRD_FRAMES)
+
+    def current_image(self) -> pygame.Surface:
+        base = BIRD_FRAMES[int(self.frame_index)]
+        # natočení podle rychlosti pro „živější“ dojem
+        angle = max(min(-self.velocity * 3, 25), -25)  # omezíme rozsah natočení
+        return pygame.transform.rotozoom(base, angle, 1.0)
 
     def get_rect(self) -> pygame.Rect:
-        return pygame.Rect(int(self.x), int(self.y), BIRD_WIDTH, BIRD_HEIGHT)
+        img = self.current_image()
+        r = img.get_rect()
+        r.topleft = (int(self.x), int(self.y))
+        return r
 
     def draw(self, surface: pygame.Surface) -> None:
-        pygame.draw.rect(surface, GOLD, self.get_rect())
+        surface.blit(self.current_image(), (int(self.x), int(self.y)))
 
 
 @dataclass
@@ -99,7 +139,7 @@ class PipePair:
 
 
 # ---------------------------------------------------------------------------
-# 5) HERNÍ STAVY A RENDERY
+# 6) HERNÍ STAVY A RENDERY
 # ---------------------------------------------------------------------------
 MENU = "menu"
 PLAYING = "playing"
@@ -137,7 +177,7 @@ def draw_score(surface: pygame.Surface, score: int) -> None:
 
 
 # ---------------------------------------------------------------------------
-# 6) STAV HRY – VÝROBA STARTOVNÍHO STAVU
+# 7) STARTOVNÍ STAV HRY
 # ---------------------------------------------------------------------------
 def create_initial_game_state() -> tuple[Bird, list[PipePair], int]:
     bird = Bird(BIRD_START_X, BIRD_START_Y)
@@ -150,7 +190,7 @@ def create_initial_game_state() -> tuple[Bird, list[PipePair], int]:
 
 
 # ---------------------------------------------------------------------------
-# 7) HLAVNÍ SMYČKA
+# 8) HLAVNÍ SMYČKA
 # ---------------------------------------------------------------------------
 def main() -> None:
     state = MENU
