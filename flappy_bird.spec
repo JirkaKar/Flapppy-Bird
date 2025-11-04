@@ -5,7 +5,7 @@ a = Analysis(
     ['flappy_bird.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=[('assets', 'assets')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
