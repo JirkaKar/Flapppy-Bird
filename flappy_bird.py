@@ -15,6 +15,7 @@ Každý blok má krátký popis, co přesně dělá a proč to děláme.
 import random
 from dataclasses import dataclass
 
+import codex
 import pygame
 
 # ---------------------------------------------------------------------------
@@ -38,7 +39,7 @@ CLOCK = pygame.time.Clock()
 # ---------------------------------------------------------------------------
 # Barvy zapisujeme jako trojici (R, G, B). Hodnota 0–255.
 WHITE = (255, 255, 255)
-codex/create-flappy-bird-game-in-python-bdp1xl
+"""codex/create-flappy-bird-game-python-bdp1xl"""
 BLACK = (0, 0, 0)
 SKY_BLUE = (135, 206, 235)
 GRASS_GREEN = (0, 170, 70)
@@ -297,7 +298,7 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-=======
+
 GREEN = (0, 200, 0)
 
 # Vlastnosti ptáka
